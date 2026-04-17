@@ -48665,16 +48665,7 @@ app.loadData({
         "clickable": true,
         "visible": true,
         "type": "polygon",
-        "objType": "Extruded",
-        "label": {
-          "relative": true,
-          "font": "sans-serif",
-          "size": 0,
-          "color": "rgb(0,0,0)",
-          "olcolor": "rgb(255,255,255)",
-          "bgcolor": "rgba(255,255,255,0.69)",
-          "cncolor": 12632272
-        }
+        "objType": "Extruded"
       },
       "body": {
         "materials": [
@@ -48729,9 +48720,7 @@ app.loadData({
                 },
                 "mtl": {
                   "idx": 0
-                },
-                "lbl": "1",
-                "lh": 50.0
+                }
               },
               {
                 "geom": {
@@ -48772,9 +48761,7 @@ app.loadData({
                 },
                 "mtl": {
                   "idx": 0
-                },
-                "lbl": "2",
-                "lh": 50.0
+                }
               },
               {
                 "geom": {
@@ -48815,9 +48802,7 @@ app.loadData({
                 },
                 "mtl": {
                   "idx": 0
-                },
-                "lbl": "3",
-                "lh": 50.0
+                }
               },
               {
                 "geom": {
@@ -48858,9 +48843,7 @@ app.loadData({
                 },
                 "mtl": {
                   "idx": 0
-                },
-                "lbl": "4",
-                "lh": 50.0
+                }
               },
               {
                 "geom": {
@@ -48901,9 +48884,7 @@ app.loadData({
                 },
                 "mtl": {
                   "idx": 0
-                },
-                "lbl": "5",
-                "lh": 50.0
+                }
               },
               {
                 "geom": {
@@ -48944,9 +48925,7 @@ app.loadData({
                 },
                 "mtl": {
                   "idx": 0
-                },
-                "lbl": "6",
-                "lh": 50.0
+                }
               },
               {
                 "geom": {
@@ -48987,9 +48966,7 @@ app.loadData({
                 },
                 "mtl": {
                   "idx": 0
-                },
-                "lbl": "7",
-                "lh": 50.0
+                }
               },
               {
                 "geom": {
@@ -49030,9 +49007,7 @@ app.loadData({
                 },
                 "mtl": {
                   "idx": 0
-                },
-                "lbl": "8",
-                "lh": 50.0
+                }
               },
               {
                 "geom": {
@@ -49073,9 +49048,7 @@ app.loadData({
                 },
                 "mtl": {
                   "idx": 0
-                },
-                "lbl": "9",
-                "lh": 50.0
+                }
               },
               {
                 "geom": {
@@ -49124,9 +49097,7 @@ app.loadData({
                 },
                 "mtl": {
                   "idx": 0
-                },
-                "lbl": "10",
-                "lh": 50.0
+                }
               }
             ],
             "featureCount": 10,
