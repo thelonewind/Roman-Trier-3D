@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trier Roman Digital Twin — Cesium Viewer</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body { font-family: 'Raleway', sans-serif; background: #0a0a0f; color: #e8dcc8; overflow: hidden; }
+
+    #cesiumContainer { width: 100vw; height: 100vh; }
+
+    /* ── Top Title Bar ── */
+    #titleBar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 14px 24px;
+      background: linear-gradient(to bottom, rgba(10,8,5,0.92), transparent);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #titleBar h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: #d4b483;
+      text-shadow: 0 0 20px rgba(212,180,131,0.4);
+    }
+    #titleBar span {
+      font-size: 0.75rem;
+      color: #8a7a60;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    .title-divider {
+      width: 1px;
+      height: 28px;
+      background: rgba(212,180,131,0.3);
+    }
+
+    /* ── Layer Control Panel ── */
+    #layerPanel {
+      position: absolute;
+      top: 70px;
+      right: 20px;
+      width: 240px;
+      background: rgba(12, 10, 8, 0.88);
+      border: 1px solid rgba(212,180,131,0.2);
+      border-radius: 4px;
+      backdrop-filter: blur(12px);
+      z-index: 10;
+      overflow: hidden;
+    }
+    #layerPanel h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #d4b483;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(212,180,131,0.15);
+    }
+    .layer-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .layer-item:hover { background: rgba(212,180,131,0.07); }
+    .layer-item:last-child { border-bottom: none; }
+    .layer-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    .layer-label {
+      font-size: 0.8rem;
+      color: #c8b99a;
+      flex: 1;
+      letter-spacing: 0.03em;
+    }
+    .layer-toggle {
+      width: 28px; height: 15px;
+      border-radius: 8px;
+      background: rgba(212,180,131,0.2);
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .layer-toggle.on { background: rgba(212,180,131,0.7); }
+    .layer-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      background: #1a1510;
+      transition: transform 0.2s;
+    }
+    .layer-toggle.on::after { transform: translateX(13px); }
+    .layer-item.disabled .layer-label { color: #5a4f3f; }
+    .layer-item.disabled .layer-dot { opacity: 0.25; }
+
+    /* ── Status / Loading Overlay ── */
+    #statusBar {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(12,10,8,0.85);
+      border: 1px solid rgba(212,180,131,0.2);
+      border-radius: 3px;
+      padding: 8px 20px;
+      font-size: 0.75rem;
+      color: #8a7a60;
+      letter-spacing: 0.1em;
+      z-index: 10;
+      transition: opacity 0.5s;
+    }
+
+    /* ── Info Popup ── */
+    #infoBox {
+      position: absolute;
+      bottom: 70px;
+      left: 20px;
+      width: 260px;
+      background: rgba(12,10,8,0.92);
+      border: 1px solid rgba(212,180,131,0.2);
+      border-radius: 4px;
+      padding: 14px 16px;
+      z-index: 10;
+      display: none;
+      backdrop-filter: blur(12px);
+    }
+    #infoBox h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      color: #d4b483;
+      margin-bottom: 8px;
+    }
+    #infoBox p {
+      font-size: 0.75rem;
+      color: #8a7a60;
+      line-height: 1.6;
+    }
+    #infoBox .close-btn {
+      position: absolute;
+      top: 8px; right: 10px;
+      font-size: 0.7rem;
+      color: #5a4f3f;
+      cursor: pointer;
+      padding: 2px 5px;
+    }
+    #infoBox .close-btn:hover { color: #d4b483; }
+  </style>
+</head>
+<body>
+
+<div id="cesiumContainer"></div>
+
+<!-- Title -->
+<div id="titleBar">
+  <h1>TRIER</h1>
+  <div class="title-divider"></div>
+  <span>Roman Digital Twin</span>
+</div>
+
+<!-- Layer Panel -->
+<div id="layerPanel">
+  <h2>Layers</h2>
+  <div class="layer-item" id="toggle-housing" onclick="toggleLayer('housing')">
+    <div class="layer-dot" style="background:#c0956e;"></div>
+    <span class="layer-label">Housing</span>
+    <div class="layer-toggle on" id="tog-housing"></div>
+  </div>
+  <div class="layer-item" id="toggle-historic" onclick="toggleLayer('historic')">
+    <div class="layer-dot" style="background:#d4b483;"></div>
+    <span class="layer-label">Historic Sites</span>
+    <div class="layer-toggle on" id="tog-historic"></div>
+  </div>
+  <div class="layer-item" id="toggle-fortification" onclick="toggleLayer('fortification')">
+    <div class="layer-dot" style="background:#8b5e3c;"></div>
+    <span class="layer-label">Fortification Wall</span>
+    <div class="layer-toggle on" id="tog-fortification"></div>
+  </div>
+  <div class="layer-item" id="toggle-roads" onclick="toggleLayer('roads')">
+    <div class="layer-dot" style="background:#a89070;"></div>
+    <span class="layer-label">Roman Roads</span>
+    <div class="layer-toggle on" id="tog-roads"></div>
+  </div>
+</div>
+
+<!-- Status Bar -->
+<div id="statusBar">Loading Trier layers...</div>
+
+<!-- Info Box -->
+<div id="infoBox">
+  <span class="close-btn" onclick="document.getElementById('infoBox').style.display='none'">✕</span>
+  <h3 id="infoTitle">Feature</h3>
+  <p id="infoContent"></p>
+</div>
+
+<script>
+  // ─────────────────────────────────────────────
+  // CONFIGURATION — Fill in your values below!
+  // ─────────────────────────────────────────────
+  const CESIUM_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2ZmNiYWYwOC1jNWNjLTQ0MTUtODE1Yi1mODE5ZDkxYjg3M2EiLCJpZCI6NDIwMzA1LCJpYXQiOjE3NzY2NzIwMjB9.9ppB2f-92AwmmBvmq9ID5g14xGQvTCzJ5ksc2H2PLSQ";
+
+  const ASSET_IDS = {
+    housing:       4661912,
+    historic:      4661913,
+    fortification: 4661915,
+    roads:         4661916
+  };
+  // ─────────────────────────────────────────────
+
+  Cesium.Ion.defaultAccessToken = CESIUM_ACCESS_TOKEN;
+
+  const viewer = new Cesium.Viewer("cesiumContainer", {
+    terrain: Cesium.Terrain.fromWorldTerrain(),
+    baseLayerPicker: false,
+    navigationHelpButton: false,
+    homeButton: false,
+    sceneModePicker: false,
+    geocoder: false,
+    animation: false,
+    timeline: false,
+    fullscreenButton: false,
+    infoBox: false,
+    selectionIndicator: false,
+  });
+
+  // Enable lighting for more realistic look
+  viewer.scene.globe.enableLighting = true;
+  viewer.scene.fog.enabled = true;
+
+  // Store datasources for toggle
+  const layers = {};
+  const layerVisible = { housing: true, historic: true, fortification: true, roads: true };
+
+  // ── Layer Styling ──
+  const styles = {
+    housing: {
+      fill: Cesium.Color.fromCssColorString("#c0956e").withAlpha(0.75),
+      outline: Cesium.Color.fromCssColorString("#8b5e3c"),
+      heightField: "height"
+    },
+    historic: {
+      fill: Cesium.Color.fromCssColorString("#d4b483").withAlpha(0.85),
+      outline: Cesium.Color.fromCssColorString("#a07840"),
+      heightField: "height"
+    },
+    fortification: {
+      fill: Cesium.Color.fromCssColorString("#6b3c20").withAlpha(0.9),
+      outline: Cesium.Color.fromCssColorString("#4a2810"),
+      heightField: "height"
+    },
+    roads: {
+      fill: Cesium.Color.fromCssColorString("#c8aa78").withAlpha(0.8),
+      outline: Cesium.Color.fromCssColorString("#8a6a40"),
+      heightField: null  // Roads clamp to ground — no extrusion
+    }
+  };
+
+  // ── Load a GeoJSON layer from Cesium Ion ──
+  async function loadLayer(name) {
+    try {
+      const resource = await Cesium.IonResource.fromAssetId(ASSET_IDS[name]);
+      const dataSource = await Cesium.GeoJsonDataSource.load(resource, {
+        clampToGround: name === "roads"  // Only roads clamp to ground
+      });
+
+      const s = styles[name];
+
+      dataSource.entities.values.forEach(entity => {
+        if (entity.polygon) {
+          entity.polygon.material = s.fill;
+          entity.polygon.outlineColor = s.outline;
+          entity.polygon.outline = true;
+          entity.polygon.outlineWidth = 1.5;
+
+          if (s.heightField && entity.properties && entity.properties[s.heightField]) {
+            // Extrude using height attribute
+            const h = parseFloat(entity.properties[s.heightField]);
+            if (!isNaN(h) && h > 0) {
+              entity.polygon.extrudedHeight = h;
+              entity.polygon.height = 0;
+              entity.polygon.closeTop = true;
+              entity.polygon.closeBottom = true;
+            }
+          }
+
+          if (name === "roads") {
+            entity.polygon.classificationType = Cesium.ClassificationType.TERRAIN;
+          }
+        }
+      });
+
+      viewer.dataSources.add(dataSource);
+      layers[name] = dataSource;
+      updateStatus();
+
+    } catch (err) {
+      console.error(`Failed to load ${name}:`, err);
+      setStatus(`⚠ Could not load ${name} — check Asset ID`);
+    }
+  }
+
+  // ── Toggle layer visibility ──
+  function toggleLayer(name) {
+    layerVisible[name] = !layerVisible[name];
+    if (layers[name]) {
+      layers[name].show = layerVisible[name];
+    }
+    const tog = document.getElementById(`tog-${name}`);
+    const item = document.getElementById(`toggle-${name}`);
+    tog.classList.toggle("on", layerVisible[name]);
+    item.classList.toggle("disabled", !layerVisible[name]);
+  }
+
+  // ── Status helpers ──
+  let loadedCount = 0;
+  function updateStatus() {
+    loadedCount++;
+    const bar = document.getElementById("statusBar");
+    if (loadedCount >= Object.keys(ASSET_IDS).length) {
+      bar.textContent = "All layers loaded — Click a feature to inspect";
+      setTimeout(() => bar.style.opacity = "0", 3000);
+    } else {
+      bar.textContent = `Loading layers… (${loadedCount}/${Object.keys(ASSET_IDS).length})`;
+    }
+  }
+  function setStatus(msg) {
+    const bar = document.getElementById("statusBar");
+    bar.textContent = msg;
+    bar.style.opacity = "1";
+  }
+
+  // ── Click to inspect feature ──
+  viewer.screenSpaceEventHandler.setInputAction(movement => {
+    const picked = viewer.scene.pick(movement.position);
+    if (Cesium.defined(picked) && picked.id && picked.id.properties) {
+      const props = picked.id.properties;
+      const name = props.name ? props.name.getValue() : null;
+      const height = props.height ? props.height.getValue() : null;
+      const historic = props.historic ? props.historic.getValue() : null;
+      const building = props.building ? props.building.getValue() : null;
+      const type = props.Type ? props.Type.getValue() : null;
+      const roadName = props.Road_Name ? props.Road_Name.getValue() : null;
+
+      const title = name || roadName || type || historic || building || "Feature";
+      let details = "";
+      if (height) details += `Height: ${height}m<br>`;
+      if (historic) details += `Type: ${historic}<br>`;
+      if (building) details += `Building: ${building}<br>`;
+      if (type) details += `Type: ${type}<br>`;
+      if (roadName) details += `Road: ${roadName}<br>`;
+
+      document.getElementById("infoTitle").textContent = title;
+      document.getElementById("infoContent").innerHTML = details || "No additional info";
+      document.getElementById("infoBox").style.display = "block";
+    }
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+  // ── Fly to Trier on load ──
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(6.6413, 49.7596, 2500),
+    orientation: {
+      heading: Cesium.Math.toRadians(0),
+      pitch: Cesium.Math.toRadians(-45),
+      roll: 0
+    },
+    duration: 3
+  });
+
+  // ── Load all layers ──
+  loadLayer("housing");
+  loadLayer("historic");
+  loadLayer("fortification");
+  loadLayer("roads");
+</script>
+</body>
+</html>
